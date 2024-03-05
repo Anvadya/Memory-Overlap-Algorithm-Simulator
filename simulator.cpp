@@ -1,10 +1,12 @@
 #include "simulator.h"
 #include <limits.h>
 #include <map>
+#include <math.h>
 
 Simulator::Simulator(){
     getMatrix();
     thread_groups = DSU{number_of_threads};
+    printMatrix();
     run();
 }
 
@@ -47,11 +49,11 @@ void Simulator::step(){
     static int stp = 0;
     std::cout << "STEP:\t" << ++stp << std::endl;
     int best_i {-1}, best_j {-1};
-    int min_val = INT_MAX;
+    double min_val = 10.0;
     for(auto i: thread_groups.representative_elements){
         for(auto j: thread_groups.representative_elements){
             if(i>=j || (!eligible(i)) || (!eligible(j))) continue;
-            int dij = distance(i,j);
+            double dij = distance(i,j);
             if(dij<min_val) min_val = dij, best_i = i, best_j = j;
         }
     }
@@ -63,7 +65,7 @@ bool Simulator::stoppingCondition(){
 }
 
 bool Simulator::eligible(int i){
-    return thread_groups.sz[i] <= max_thread_group_size;
+    return thread_groups.sz[i] <= (number_of_threads+n_CN-1)/n_CN;
 }
 
 double Simulator::distance(int i, int j){
@@ -93,8 +95,10 @@ double Simulator::similarity(int i, int j){
     double similarity_value = 0;
     for(auto t_group: thread_groups.representative_elements){
         if(t_group == i || t_group == j) continue;
-        similarity_value += abs(overlap(t_group,i) - overlap(t_group,j));
+        // std::cout << "T:\t" << overlap(t_group,i)  << "\t" << overlap(t_group,j) << "\t" << i << j << t_group << std::endl;
+        similarity_value += fabs(overlap(t_group,i) - overlap(t_group,j));
     }
+    // std::cout << similarity_value << std::endl;
     similarity_value /= (thread_groups.n_sets-2);
     return similarity_value;
 }
